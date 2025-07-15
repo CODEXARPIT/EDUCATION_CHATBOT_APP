@@ -1,1 +1,337 @@
+CODE OF MIDMENTOR APP
+(1)ACTIVITY_MAIN.XML
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@drawable/a">
+
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#CCFFFFFF"
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/chatOutput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textColor="#000000" />
+    </ScrollView>
+
+    <EditText
+        android:id="@+id/userInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:background="@android:drawable/editbox_background"
+        android:hint="Type your message..."
+        android:minHeight="48dp"
+        android:padding="8dp"
+        android:textSize="16sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/sendButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Send"
+            android:backgroundTint="#4CAF50"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="4dp"/>
+
+        <Button
+            android:id="@+id/resetQuizButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Reset Score"
+            android:backgroundTint="#03A9F4"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="4dp"/>
+    </LinearLayout>
+
+</LinearLayout>
+
+
+(2) MAIN ACTIVITY.JAVA
+
+package com.example.mindmentor;
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.mindmentor.R;
+
+public class MainActivity extends AppCompatActivity {
+
+    TextView chatOutput;
+    EditText userInput;
+    Button sendButton, resetQuizButton;
+    ScrollView scrollView;
+    private String currentQuizAnswer = "";
+    private int score = 0;
+    private int totalQuestions = 0;
+    private int highScore = 0;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        loadHighScore();
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        chatOutput = findViewById(R.id.chatOutput);
+        userInput = findViewById(R.id.userInput);
+        sendButton = findViewById(R.id.sendButton);
+        resetQuizButton = findViewById(R.id.resetQuizButton);
+        scrollView = findViewById(R.id.scrollView);
+
+        sendButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String question = userInput.getText().toString().trim();
+                if (!question.isEmpty()) {
+                    chatOutput.append("\nYou: " + question);
+                    userInput.setText("");
+                    scrollView.fullScroll(View.FOCUS_DOWN);
+
+                    chatOutput.append("\nBot is typing");
+
+                    final int[] dotCount = {0};
+                    final Runnable typingAnimation = new Runnable() {
+                        @Override
+                        public void run() {
+                            dotCount[0]++;
+                            String dots = new String(new char[dotCount[0] % 4]).replace("\0", ".");
+                            String updated = chatOutput.getText().toString()
+                                    .replaceAll("Bot is typing.*", "Bot is typing" + dots);
+                            chatOutput.setText(updated);
+                            scrollView.fullScroll(View.FOCUS_DOWN);
+
+                            if (dotCount[0] < 6) {
+                                chatOutput.postDelayed(this, 500);
+                            } else {
+                                String response = solveInput(question);
+                                String finalReply = chatOutput.getText().toString()
+                                        .replaceAll("Bot is typing.*", "Bot: " + response);
+                                chatOutput.setText(finalReply);
+                                scrollView.fullScroll(View.FOCUS_DOWN);
+                            }
+                        }
+                    };
+                    chatOutput.post(typingAnimation);
+                }
+            }
+        });
+
+        resetQuizButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                score = 0;
+                totalQuestions = 0;
+                saveHighScore();
+                chatOutput.append("\nBot: ✅ Your quiz score has been reset to 0.");
+                scrollView.fullScroll(View.FOCUS_DOWN);
+            }
+        });
+    }
+
+    private String solveInput(String input) {
+        input = input.toLowerCase();
+        if (!currentQuizAnswer.isEmpty()) {
+            String reply = checkQuizAnswer(input);
+            currentQuizAnswer = "";
+            return reply;
+        }
+        if (input.contains("score")) {
+            return "Your score: " + score + "/" + totalQuestions + "\nHigh Score: " + highScore + "\nType 'reset score' to reset.";
+        }
+        if (input.contains("reset score")) {
+            score = 0;
+            totalQuestions = 0;
+            saveHighScore();
+            return "✅ Your score has been reset to 0.";
+        }
+        if (input.contains("time table") || input.contains("timetable") || input.contains("schedule")) {
+            return getStudentTimeTable();
+        }
+        if (input.contains("joke")) {
+            return getRandomJoke();
+        }
+        if (input.contains("define") || input.contains("definition")) {
+            return getDefinition(input);
+        }
+        if (input.contains("quiz")) {
+            return getQuizQuestion();
+        }
+        try {
+            double result = evaluateExpression(input);
+            return input + " = " + result;
+        } catch (Exception e) {
+            return "Sorry, I couldn't understand that expression.";
+        }
+    }
+
+    private String checkQuizAnswer(String userAnswer) {
+        totalQuestions++;
+        if (userAnswer.equals(currentQuizAnswer)) {
+            score++;
+            if (score > highScore) {
+                highScore = score;
+                saveHighScore();
+            }
+            return "🎉 Correct Answer! Your score: " + score + "/" + totalQuestions + "\nHigh Score: " + highScore +
+                    "\nGreat job! Keep going!\nType 'quiz' for another question.";
+        } else {
+            return "❌ Wrong Answer! The correct answer is: " + currentQuizAnswer + ". Your score: " + score + "/" + totalQuestions +
+                    "\nHigh Score: " + highScore + "\nDon't give up! Try another one by typing 'quiz'.";
+        }
+    }
+
+    private String getQuizQuestion() {
+        String[][] questionsAndAnswers = {
+                {"What is the capital of India?", "new delhi"},
+                {"Solve: 5 * 6 - 4 = ?", "26"},
+                {"Who developed Java Programming Language?", "james gosling"}
+        };
+        int index = (int) (Math.random() * questionsAndAnswers.length);
+        currentQuizAnswer = questionsAndAnswers[index][1].toLowerCase();
+        return "Quiz Time! " + questionsAndAnswers[index][0] + "\n(Type your answer)";
+    }
+
+    private String getStudentTimeTable() {
+        StringBuilder timetable = new StringBuilder();
+        timetable.append("\uD83D\uDCC5 Student Time Table:\n");
+        timetable.append("-----------------------------\n");
+        timetable.append("8:00 AM  -  Mathematics\n");
+        timetable.append("9:00 AM  -  Science\n");
+        timetable.append("10:00 AM -  English\n");
+        timetable.append("11:00 AM -  Break\n");
+        timetable.append("11:30 AM -  Computer Science\n");
+        timetable.append("12:30 PM -  Lunch Break\n");
+        timetable.append("1:30 PM  -  History\n");
+        timetable.append("2:30 PM  -  Physical Education\n");
+        timetable.append("-----------------------------\n");
+        timetable.append("End of Schedule\n");
+        return timetable.toString();
+    }
+
+    private double evaluateExpression(String expression) {
+        return new Object() {
+            int pos = -1, ch;
+
+            void nextChar() {
+                ch = (++pos < expression.length()) ? expression.charAt(pos) : -1;
+            }
+
+            boolean eat(int charToEat) {
+                while (ch == ' ') nextChar();
+                if (ch == charToEat) {
+                    nextChar();
+                    return true;
+                }
+                return false;
+            }
+
+            double parse() {
+                nextChar();
+                double x = parseExpression();
+                if (pos < expression.length()) throw new RuntimeException("Unexpected: " + (char) ch);
+                return x;
+            }
+
+            double parseExpression() {
+                double x = parseTerm();
+                while (true) {
+                    if (eat('+')) x += parseTerm();
+                    else if (eat('-')) x -= parseTerm();
+                    else return x;
+                }
+            }
+
+            double parseTerm() {
+                double x = parseFactor();
+                while (true) {
+                    if (eat('*')) x *= parseFactor();
+                    else if (eat('/')) x /= parseFactor();
+                    else return x;
+                }
+            }
+
+            double parseFactor() {
+                if (eat('+')) return parseFactor();
+                if (eat('-')) return -parseFactor();
+
+                double x;
+                int startPos = this.pos;
+                if (eat('(')) {
+                    x = parseExpression();
+                    eat(')');
+                } else if ((ch >= '0' && ch <= '9') || ch == '.') {
+                    while ((ch >= '0' && ch <= '9') || ch == '.') nextChar();
+                    x = Double.parseDouble(expression.substring(startPos, this.pos));
+                } else {
+                    throw new RuntimeException("Unexpected: " + (char) ch);
+                }
+
+                return x;
+            }
+        }.parse();
+    }
+
+    private String getRandomJoke() {
+        String[] jokes = {
+                "Why did the math book look sad? Because it had too many problems!",
+                "Why don't programmers like nature? It has too many bugs.",
+                "Why was the student’s report card wet? It was below C-level!"
+        };
+        int index = (int) (Math.random() * jokes.length);
+        return jokes[index];
+    }
+
+    private String getDefinition(String input) {
+        if (input.contains("ai")) {
+            return "AI stands for Artificial Intelligence, the simulation of human intelligence by machines.";
+        } else if (input.contains("java")) {
+            return "Java is a versatile, object-oriented programming language.";
+        } else if (input.contains("gtu")) {
+            return "GTU stands for Gujarat Technological University.";
+        } else {
+            return "Sorry, I don't have the definition for that.";
+        }
+    }
+
+    private void saveHighScore() {
+        getSharedPreferences("QuizPrefs", MODE_PRIVATE)
+                .edit()
+                .putInt("HighScore", highScore)
+                .apply();
+    }
+
+    private void loadHighScore() {
+        highScore = getSharedPreferences("QuizPrefs", MODE_PRIVATE)
+                .getInt("HighScore", 0);
+    }
+}
+
+
+
+
+
 
