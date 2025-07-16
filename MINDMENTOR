@@ -29,7 +29,7 @@ CODE OF MIDMENTOR APP
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:background="@android:drawable/editbox_background"
-        android:hint="Type your message..."
+        android:hint="Type your problem Example : 3 + 4 , define Ai , gtu , jokes..."
         android:minHeight="48dp"
         android:padding="8dp"
         android:textSize="16sp" />
@@ -118,6 +118,60 @@ public class MainActivity extends AppCompatActivity {
     private int totalQuestions = 0;
     private int highScore = 0;
 
+    private final String[][] questionsAndAnswers = {
+            {"What is the capital of India?", "new delhi"},
+            {"Solve: 5 * 6 - 4 = ?", "26"},
+            {"Who developed Java Programming Language?", "james gosling"},
+            {"What is the boiling point of water in Celsius?", "100"},
+            {"Who is known as the Father of Computers?", "charles babbage"},
+            {"Which planet is known as the Red Planet?", "mars"},
+            {"What is the chemical symbol for Gold?", "au"},
+            {"What is the largest mammal?", "blue whale"},
+            {"Who discovered gravity?", "isaac newton"},
+            {"Who painted the Mona Lisa?", "leonardo da vinci"},
+            {"What is the square root of 144?", "12"},
+            {"Which gas do plants absorb?", "carbon dioxide"},
+            {"Which is the longest river in the world?", "nile"},
+            {"What is H2O?", "water"},
+            {"Who wrote 'Romeo and Juliet'?", "william shakespeare"},
+            {"How many continents are there?", "7"},
+            {"What is the smallest prime number?", "2"},
+            {"In which year did India get independence?", "1947"},
+            {"Who is the current CEO of Google?", "sundar pichai"},
+            {"What is the speed of light in km/s?", "300000"},
+            {"What is the hardest natural substance?", "diamond"},
+            {"Who invented the telephone?", "alexander graham bell"},
+            {"How many states are there in India?", "28"},
+            {"What is the capital of France?", "paris"},
+            {"What is the freezing point of water in Celsius?", "0"},
+            {"Who discovered penicillin?", "alexander fleming"},
+            {"What is the chemical symbol for Iron?", "fe"},
+            {"Which country is known as the Land of Rising Sun?", "japan"},
+            {"Which is the largest desert in the world?", "sahara"},
+            {"What is the square of 15?", "225"},
+            {"Who wrote the Harry Potter series?", "jk rowling"},
+            {"What currency is used in Japan?", "yen"},
+            {"Which is the smallest continent?", "australia"},
+            {"What is the full form of CPU?", "central processing unit"},
+            {"What is the national animal of India?", "tiger"},
+            {"Who invented electricity?", "benjamin franklin"},
+            {"What is the chemical symbol of Sodium?", "na"},
+            {"What is 12 * 12?", "144"},
+            {"What is the capital of USA?", "washington dc"},
+            {"Who is the author of Mahabharata?", "ved vyas"},
+            {"What does HTTP stand for?", "hypertext transfer protocol"},
+            {"What is 25 squared?", "625"},
+            {"What is the largest ocean in the world?", "pacific"},
+            {"Which vitamin is gained from sunlight?", "vitamin d"},
+            {"Who is called the Missile Man of India?", "apj abdul kalam"},
+            {"What is the nearest star to Earth?", "sun"},
+            {"Which organ purifies blood in the human body?", "kidney"},
+            {"How many bones are in the human body?", "206"},
+            {"What is the main source of energy on Earth?", "sun"},
+            {"Who is known as Iron Man of India?", "sardar vallabhbhai patel"},
+            {"What is the value of Pi (upto 2 decimal places)?", "3.14"}
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         loadHighScore();
@@ -132,80 +186,68 @@ public class MainActivity extends AppCompatActivity {
         quizButton = findViewById(R.id.quizButton);
         scrollView = findViewById(R.id.scrollView);
 
-        sendButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String question = userInput.getText().toString().trim();
-                if (!question.isEmpty()) {
-                    chatOutput.append("\nYou: " + question);
-                    userInput.setText("");
+        sendButton.setOnClickListener(v -> handleUserInput());
+
+        resetQuizButton.setOnClickListener(v -> {
+            score = 0;
+            totalQuestions = 0;
+            saveHighScore();
+            chatOutput.append("\nBot: ✅ Your quiz score has been reset to 0.");
+            scrollView.fullScroll(View.FOCUS_DOWN);
+        });
+
+        timeTableButton.setOnClickListener(v -> {
+            chatOutput.append("\nYou: Show me the time table");
+            chatOutput.append("\nBot: " + getStudentTimeTable());
+            scrollView.fullScroll(View.FOCUS_DOWN);
+        });
+
+        quizButton.setOnClickListener(v -> {
+            chatOutput.append("\nYou: Start quiz");
+            chatOutput.append("\nBot: " + getQuizQuestion());
+            scrollView.fullScroll(View.FOCUS_DOWN);
+        });
+    }
+
+    private void handleUserInput() {
+        String question = userInput.getText().toString().trim();
+        if (!question.isEmpty()) {
+            chatOutput.append("\nYou: " + question);
+            userInput.setText("");
+            scrollView.fullScroll(View.FOCUS_DOWN);
+
+            chatOutput.append("\nBot is typing");
+
+            final int[] dotCount = {0};
+            final Runnable typingAnimation = new Runnable() {
+                @Override
+                public void run() {
+                    dotCount[0]++;
+                    String dots = new String(new char[dotCount[0] % 4]).replace("\0", ".");
+                    String updated = chatOutput.getText().toString()
+                            .replaceAll("Bot is typing.*", "Bot is typing" + dots);
+                    chatOutput.setText(updated);
                     scrollView.fullScroll(View.FOCUS_DOWN);
 
-                    chatOutput.append("\nBot is typing");
-
-                    final int[] dotCount = {0};
-                    final Runnable typingAnimation = new Runnable() {
-                        @Override
-                        public void run() {
-                            dotCount[0]++;
-                            String dots = new String(new char[dotCount[0] % 4]).replace("\0", ".");
-                            String updated = chatOutput.getText().toString()
-                                    .replaceAll("Bot is typing.*", "Bot is typing" + dots);
-                            chatOutput.setText(updated);
-                            scrollView.fullScroll(View.FOCUS_DOWN);
-
-                            if (dotCount[0] < 6) {
-                                chatOutput.postDelayed(this, 500);
-                            } else {
-                                String response = solveInput(question);
-                                String finalReply = chatOutput.getText().toString()
-                                        .replaceAll("Bot is typing.*", "Bot: " + response);
-                                chatOutput.setText(finalReply);
-                                scrollView.fullScroll(View.FOCUS_DOWN);
-                            }
-                        }
-                    };
-                    chatOutput.post(typingAnimation);
+                    if (dotCount[0] < 6) {
+                        chatOutput.postDelayed(this, 500);
+                    } else {
+                        String response = solveInput(question);
+                        String finalReply = chatOutput.getText().toString()
+                                .replaceAll("Bot is typing.*", "Bot: " + response);
+                        chatOutput.setText(finalReply);
+                        scrollView.fullScroll(View.FOCUS_DOWN);
+                    }
                 }
-            }
-        });
-
-        resetQuizButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                score = 0;
-                totalQuestions = 0;
-                saveHighScore();
-                chatOutput.append("\nBot: ✅ Your quiz score has been reset to 0.");
-                scrollView.fullScroll(View.FOCUS_DOWN);
-            }
-        });
-
-        timeTableButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                chatOutput.append("\nYou: Show me the time table");
-                chatOutput.append("\nBot: " + getStudentTimeTable());
-                scrollView.fullScroll(View.FOCUS_DOWN);
-            }
-        });
-
-        quizButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                chatOutput.append("\nYou: Start quiz");
-                chatOutput.append("\nBot: " + getQuizQuestion());
-                scrollView.fullScroll(View.FOCUS_DOWN);
-            }
-        });
+            };
+            chatOutput.post(typingAnimation);
+        }
     }
 
     private String solveInput(String input) {
         input = input.toLowerCase();
         if (!currentQuizAnswer.isEmpty()) {
-            String reply = checkQuizAnswer(input);
-            currentQuizAnswer = "";
-            return reply;
+            return checkQuizAnswer(input);
         }
         if (input.contains("score")) {
             return "Your score: " + score + "/" + totalQuestions + "\nHigh Score: " + highScore + "\nType 'reset score' to reset.";
@@ -238,72 +280,68 @@ public class MainActivity extends AppCompatActivity {
 
     private String checkQuizAnswer(String userAnswer) {
         totalQuestions++;
+        String feedback;
         if (userAnswer.equals(currentQuizAnswer)) {
             score++;
             if (score > highScore) {
                 highScore = score;
                 saveHighScore();
             }
-            return "🎉 Correct Answer! Your score: " + score + "/" + totalQuestions + "\nHigh Score: " + highScore +
-                    "\nGreat job! Keep going!\nType 'quiz' for another question.";
+            feedback = "🎉 Correct Answer!";
         } else {
-            return "❌ Wrong Answer! The correct answer is: " + currentQuizAnswer + ". Your score: " + score + "/" + totalQuestions +
-                    "\nHigh Score: " + highScore + "\nDon't give up! Try another one by typing 'quiz'.";
+            feedback = "❌ Wrong Answer! The correct answer is: " + currentQuizAnswer;
         }
+
+        if (totalQuestions % 10 == 0) {
+            feedback += "\n\n🏆 Scoreboard 🏆\n" +
+                    "Your Score: " + score + " / " + totalQuestions +
+                    "\nHigh Score: " + highScore +
+                    "\n\nType 'quiz' to start a new round!";
+            currentQuizAnswer = "";  // Stop auto next after 10th question
+        } else {
+            feedback += "\nYour Score: " + score + " / " + totalQuestions +
+                    "\nHigh Score: " + highScore +
+                    "\n\nNext Question:\n" + getQuizQuestion();
+        }
+        return feedback;
     }
 
     private String getQuizQuestion() {
-        String[][] questionsAndAnswers = {
-                {"What is the capital of India?", "new delhi"},
-                {"Solve: 5 * 6 - 4 = ?", "26"},
-                {"Who developed Java Programming Language?", "james gosling"}
-        };
         int index = (int) (Math.random() * questionsAndAnswers.length);
         currentQuizAnswer = questionsAndAnswers[index][1].toLowerCase();
         return "Quiz Time! " + questionsAndAnswers[index][0] + "\n(Type your answer)";
     }
 
     private String getStudentTimeTable() {
-        StringBuilder timetable = new StringBuilder();
-        timetable.append("\uD83D\uDCC5 Student Time Table:\n");
-        timetable.append("-----------------------------\n");
-        timetable.append("8:00 AM  -  Mathematics\n");
-        timetable.append("9:00 AM  -  Science\n");
-        timetable.append("10:00 AM -  English\n");
-        timetable.append("11:00 AM -  Break\n");
-        timetable.append("11:30 AM -  Computer Science\n");
-        timetable.append("12:30 PM -  Lunch Break\n");
-        timetable.append("1:30 PM  -  History\n");
-        timetable.append("2:30 PM  -  Physical Education\n");
-        timetable.append("-----------------------------\n");
-        timetable.append("End of Schedule\n");
-        return timetable.toString();
+        return "\uD83D\uDCC5 Student Time Table:\n" +
+                "-----------------------------\n" +
+                "8:00 AM  -  Mathematics\n" +
+                "9:00 AM  -  Science\n" +
+                "10:00 AM -  English\n" +
+                "11:00 AM -  Break\n" +
+                "11:30 AM -  Computer Science\n" +
+                "12:30 PM -  Lunch Break\n" +
+                "1:30 PM  -  History\n" +
+                "2:30 PM  -  Physical Education\n" +
+                "-----------------------------\n" +
+                "End of Schedule\n";
     }
 
     private double evaluateExpression(String expression) {
         return new Object() {
             int pos = -1, ch;
-
-            void nextChar() {
-                ch = (++pos < expression.length()) ? expression.charAt(pos) : -1;
-            }
-
+            void nextChar() { ch = (++pos < expression.length()) ? expression.charAt(pos) : -1; }
             boolean eat(int charToEat) {
                 while (ch == ' ') nextChar();
-                if (ch == charToEat) {
-                    nextChar();
-                    return true;
-                }
+                if (ch == charToEat) { nextChar(); return true; }
                 return false;
             }
-
             double parse() {
                 nextChar();
                 double x = parseExpression();
                 if (pos < expression.length()) throw new RuntimeException("Unexpected: " + (char) ch);
                 return x;
             }
-
             double parseExpression() {
                 double x = parseTerm();
                 while (true) {
@@ -312,7 +350,6 @@ public class MainActivity extends AppCompatActivity {
                     else return x;
                 }
             }
-
             double parseTerm() {
                 double x = parseFactor();
                 while (true) {
@@ -321,11 +358,9 @@ public class MainActivity extends AppCompatActivity {
                     else return x;
                 }
             }
-
             double parseFactor() {
                 if (eat('+')) return parseFactor();
                 if (eat('-')) return -parseFactor();
-
                 double x;
                 int startPos = this.pos;
                 if (eat('(')) {
@@ -337,7 +372,6 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     throw new RuntimeException("Unexpected: " + (char) ch);
                 }
-
                 return x;
             }
         }.parse();
@@ -366,21 +400,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveHighScore() {
-        getSharedPreferences("QuizPrefs", MODE_PRIVATE)
-                .edit()
-                .putInt("HighScore", highScore)
-                .apply();
+        getSharedPreferences("QuizPrefs", MODE_PRIVATE).edit().putInt("HighScore", highScore).apply();
     }
 
     private void loadHighScore() {
-        highScore = getSharedPreferences("QuizPrefs", MODE_PRIVATE)
-                .getInt("HighScore", 0);
+        highScore = getSharedPreferences("QuizPrefs", MODE_PRIVATE).getInt("HighScore", 0);
     }
 }
-
-
-
-
-
-
-
