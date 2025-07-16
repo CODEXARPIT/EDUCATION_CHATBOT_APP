@@ -1,6 +1,5 @@
 CODE OF MIDMENTOR APP
 (1)ACTIVITY_MAIN.XML
-
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -39,7 +38,8 @@ CODE OF MIDMENTOR APP
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center">
+        android:gravity="center"
+        android:layout_marginTop="4dp">
 
         <Button
             android:id="@+id/sendButton"
@@ -62,7 +62,37 @@ CODE OF MIDMENTOR APP
             android:layout_marginStart="4dp"/>
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="4dp">
+
+        <Button
+            android:id="@+id/timeTableButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Time Table"
+            android:backgroundTint="#9C27B0"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="4dp"/>
+
+        <Button
+            android:id="@+id/quizButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Start Quiz"
+            android:backgroundTint="#FF5722"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="4dp"/>
+    </LinearLayout>
+
 </LinearLayout>
+
+
 
 
 (2) MAIN ACTIVITY.JAVA
@@ -77,13 +107,11 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.mindmentor.R;
-
 public class MainActivity extends AppCompatActivity {
 
     TextView chatOutput;
     EditText userInput;
-    Button sendButton, resetQuizButton;
+    Button sendButton, resetQuizButton, timeTableButton, quizButton;
     ScrollView scrollView;
     private String currentQuizAnswer = "";
     private int score = 0;
@@ -100,6 +128,8 @@ public class MainActivity extends AppCompatActivity {
         userInput = findViewById(R.id.userInput);
         sendButton = findViewById(R.id.sendButton);
         resetQuizButton = findViewById(R.id.resetQuizButton);
+        timeTableButton = findViewById(R.id.timeTableButton);
+        quizButton = findViewById(R.id.quizButton);
         scrollView = findViewById(R.id.scrollView);
 
         sendButton.setOnClickListener(new View.OnClickListener() {
@@ -147,6 +177,24 @@ public class MainActivity extends AppCompatActivity {
                 totalQuestions = 0;
                 saveHighScore();
                 chatOutput.append("\nBot: ✅ Your quiz score has been reset to 0.");
+                scrollView.fullScroll(View.FOCUS_DOWN);
+            }
+        });
+
+        timeTableButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                chatOutput.append("\nYou: Show me the time table");
+                chatOutput.append("\nBot: " + getStudentTimeTable());
+                scrollView.fullScroll(View.FOCUS_DOWN);
+            }
+        });
+
+        quizButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                chatOutput.append("\nYou: Start quiz");
+                chatOutput.append("\nBot: " + getQuizQuestion());
                 scrollView.fullScroll(View.FOCUS_DOWN);
             }
         });
@@ -329,6 +377,7 @@ public class MainActivity extends AppCompatActivity {
                 .getInt("HighScore", 0);
     }
 }
+
 
 
 
